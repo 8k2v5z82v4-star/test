@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Die Präsident-Serie · Euro-Banknoten</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<style>
+  :root{
+    --bg:#0d0f14;
+    --bg2:#141822;
+    --ink:#f4f1ea;
+    --muted:#9aa3b2;
+    --line:rgba(255,255,255,.08);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:
+      radial-gradient(1200px 600px at 80% -10%, rgba(120,90,255,.12), transparent 60%),
+      radial-gradient(900px 500px at 0% 20%, rgba(255,170,60,.10), transparent 55%),
+      var(--bg);
+    color:var(--ink);
+    font-family:'Segoe UI',system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    line-height:1.6;
+  }
+  .wrap{max-width:1160px;margin:0 auto;padding:0 24px}
+
+  /* Hero */
+  header.hero{
+    text-align:center;
+    padding:96px 24px 40px;
+    position:relative;
+  }
+  .kicker{
+    letter-spacing:.42em;
+    text-transform:uppercase;
+    font-size:12px;
+    color:var(--muted);
+    margin-bottom:22px;
+  }
+  h1{
+    font-size:clamp(38px,7vw,84px);
+    line-height:1.02;
+    font-weight:800;
+    letter-spacing:-.02em;
+    background:linear-gradient(180deg,#fff, #b9c0cf);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .sub{
+    max-width:620px;margin:22px auto 0;
+    color:var(--muted);font-size:18px;
+  }
+  .stars{
+    display:inline-flex;gap:6px;margin-top:28px;color:#ffd447;font-size:14px;
+    opacity:.9;
+  }
+  .denom-nav{
+    display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:34px;
+  }
+  .denom-nav a{
+    text-decoration:none;color:var(--ink);
+    border:1px solid var(--line);
+    padding:8px 16px;border-radius:999px;
+    font-weight:600;font-size:14px;
+    background:rgba(255,255,255,.03);
+    transition:.2s;
+  }
+  .denom-nav a:hover{background:rgba(255,255,255,.1);transform:translateY(-2px)}
+
+  /* Notes */
+  section.notes{padding:40px 0 40px}
+  .note-block{
+    margin:56px 0;
+    scroll-margin-top:24px;
+  }
+  .note-head{
+    display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;
+    margin:0 0 18px 4px;
+  }
+  .note-head .val{font-size:34px;font-weight:800;letter-spacing:-.01em}
+  .note-head .name{color:var(--muted);font-size:15px;letter-spacing:.12em;text-transform:uppercase}
+  .note-head .swatch{width:16px;height:16px;border-radius:50%;align-self:center;box-shadow:0 0 0 4px rgba(255,255,255,.06)}
+
+  .note-frame{
+    position:relative;
+    border-radius:14px;
+    overflow:hidden;
+    box-shadow:0 30px 60px -20px rgba(0,0,0,.8), 0 2px 0 rgba(255,255,255,.04) inset;
+    aspect-ratio:1200/600;
+    background:#fff;
+  }
+  .note-frame svg{display:block;width:100%;height:100%}
+
+  footer{
+    text-align:center;color:var(--muted);font-size:13px;
+    padding:60px 24px 80px;border-top:1px solid var(--line);margin-top:40px;
+  }
+  footer .disc{max-width:640px;margin:14px auto 0;opacity:.75;line-height:1.5}
+  a.credit{color:#cbb3ff;text-decoration:none}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <div class="kicker">Europäische Zentralbank · Sonderausgabe</div>
+    <h1>Die Präsident-Serie</h1>
+    <p class="sub">Eine vollständige Euro-Banknotenserie – jede Stückelung neu gestaltet mit dem Porträt des Präsidenten. Vom Fünfer bis zum Fünfhunderter.</p>
+    <div class="stars" id="starRow"></div>
+    <nav class="denom-nav" id="nav"></nav>
+  </div>
+</header>
+
+<section class="notes">
+  <div class="wrap" id="gallery"></div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <strong>Die Präsident-Serie</strong> — künstlerisches Konzept, kein gesetzliches Zahlungsmittel.
+    <div class="disc">Diese Website ist eine gestalterische Hommage. Die dargestellten Scheine sind fiktiv und haben keinen monetären Wert. Porträt und Layout dienen ausschließlich illustrativen Zwecken.</div>
+  </div>
+</footer>
+
+<script>
+/* ---- Denomination definitions (official Euro colour families) ---- */
+const NOTES = [
+  {value:5,   name:"Grau",   c1:"#c9c9cd", c2:"#8f9096", accent:"#5b5c63", ink:"#4a4b52"},
+  {value:10,  name:"Rot",    c1:"#f4b7ac", c2:"#d15a4e", accent:"#b3382c", ink:"#8f2b22"},
+  {value:20,  name:"Blau",   c1:"#a9c6e8", c2:"#4d7fc0", accent:"#2f5b9c", ink:"#274d86"},
+  {value:50,  name:"Orange", c1:"#f3c98b", c2:"#e0952f", accent:"#c6791a", ink:"#4a3a1e"},
+  {value:100, name:"Grün",   c1:"#bcd9b0", c2:"#5da05a", accent:"#3f8340", ink:"#2c5c2e"},
+  {value:200, name:"Gelb-Braun", c1:"#f0dda0", c2:"#c9a13e", accent:"#a67f22", ink:"#5a4718"},
+  {value:500, name:"Violett", c1:"#cdb6e3", c2:"#8256b3", accent:"#623f8c", ink:"#452a63"},
+];
+
+const NS="http://www.w3.org/2000/svg";
+
+/* Build the SVG banknote for one denomination */
+function buildNote(n){
+  const v = n.value;
+  const svg = `
+  <svg viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice" xmlns="${NS}">
+    <defs>
+      <linearGradient id="bg${v}" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#ffffff"/>
+        <stop offset=".55" stop-color="#fdfcfa"/>
+        <stop offset="1" stop-color="${n.c1}" stop-opacity=".55"/>
+      </linearGradient>
+      <linearGradient id="edgeL${v}" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="${n.c2}" stop-opacity=".9"/>
+        <stop offset="1" stop-color="${n.c2}" stop-opacity="0"/>
+      </linearGradient>
+      <linearGradient id="edgeR${v}" x1="1" y1="0" x2="0" y2="0">
+        <stop offset="0" stop-color="${n.c2}" stop-opacity=".9"/>
+        <stop offset="1" stop-color="${n.c2}" stop-opacity="0"/>
+      </linearGradient>
+      <radialGradient id="glow${v}" cx="50%" cy="42%" r="55%">
+        <stop offset="0" stop-color="${n.c2}" stop-opacity=".75"/>
+        <stop offset=".6" stop-color="${n.c1}" stop-opacity=".35"/>
+        <stop offset="1" stop-color="${n.c1}" stop-opacity="0"/>
+      </radialGradient>
+      <clipPath id="frameClip${v}"><rect width="1200" height="600" rx="0"/></clipPath>
+    </defs>
+
+    <g clip-path="url(#frameClip${v})">
+      <!-- paper -->
+      <rect width="1200" height="600" fill="url(#bg${v})"/>
+
+      <!-- microtext-ish guilloché stripes -->
+      <g stroke="${n.c2}" stroke-opacity=".14" stroke-width="1">
+        ${Array.from({length:26},(_,i)=>`<line x1="${60+i*3}" y1="30" x2="${20+i*3}" y2="120"/>`).join("")}
+        ${Array.from({length:26},(_,i)=>`<line x1="${1140-i*3}" y1="480" x2="${1180-i*3}" y2="570"/>`).join("")}
+      </g>
+
+      <!-- coloured side panels -->
+      <rect x="0" y="0" width="26" height="600" fill="${n.c2}"/>
+      <rect x="26" y="0" width="60" height="600" fill="url(#edgeL${v})"/>
+      <rect x="1174" y="0" width="26" height="600" fill="${n.c2}"/>
+      <rect x="1114" y="0" width="60" height="600" fill="url(#edgeR${v})"/>
+
+      <!-- central portrait glow -->
+      <ellipse cx="600" cy="270" rx="360" ry="330" fill="url(#glow${v})"/>
+
+      <!-- left spoke rosette (the "wheel") -->
+      <g transform="translate(360,300)" stroke="${n.c2}" stroke-opacity=".5" fill="none">
+        <circle r="150" stroke-width="2"/>
+        <circle r="120" stroke-width="1.5" stroke-opacity=".35"/>
+        <circle r="70" fill="${n.c2}" fill-opacity=".18" stroke="none"/>
+        ${Array.from({length:40},(_,i)=>{const a=i*9*Math.PI/180;return `<line x1="${70*Math.cos(a)}" y1="${70*Math.sin(a)}" x2="${150*Math.cos(a)}" y2="${150*Math.sin(a)}" stroke-width="1.3"/>`;}).join("")}
+      </g>
+
+      <!-- right network / rosette -->
+      <g transform="translate(980,300)" stroke="${n.c2}" stroke-opacity=".4" fill="none">
+        <g fill="${n.c2}" fill-opacity=".35" stroke="none">
+          ${Array.from({length:22},(_,i)=>{const a=i*Math.PI/6+i;const r=90+((i*53)%90);return `<circle cx="${r*Math.cos(a)}" cy="${r*Math.sin(a)}" r="2.4"/>`;}).join("")}
+        </g>
+        ${Array.from({length:16},(_,i)=>{const a=i*Math.PI/8;return `<line x1="0" y1="0" x2="${150*Math.cos(a)}" y2="${150*Math.sin(a)}" stroke-width=".8"/>`;}).join("")}
+        <circle r="34" stroke-width="2" stroke-opacity=".6"/>
+        <circle cy="-150" r="26" stroke-width="2" stroke-opacity=".55"/>
+        ${Array.from({length:24},(_,i)=>{const a=i*15*Math.PI/180;return `<line x1="${18*Math.cos(a)}" y1="${-150+18*Math.sin(a)}" x2="${26*Math.cos(a)}" y2="${-150+26*Math.sin(a)}" stroke-width="1.4"/>`;}).join("")}
+      </g>
+
+      <!-- Don Quixote windmill silhouette (right) -->
+      <g transform="translate(980,300)" fill="${n.accent}" fill-opacity=".55">
+        <g transform="translate(0,-30)" stroke="${n.accent}" stroke-opacity=".55" stroke-width="6" fill="none">
+          <line x1="-46" y1="-46" x2="46" y2="46"/>
+          <line x1="46" y1="-46" x2="-46" y2="46"/>
+        </g>
+        <path d="M6,120 C6,60 -4,20 4,4 C14,-8 26,-2 30,14 C40,60 40,110 46,150 L-14,150 C-12,140 4,150 6,120 Z"/>
+        <circle cx="10" cy="-16" r="16"/>
+      </g>
+
+      <!-- Portrait image -->
+      <image href="assets/portrait-ink.png" x="470" y="20" width="360" height="560"
+             preserveAspectRatio="xMidYMax meet"/>
+
+      <!-- EU flag -->
+      <g transform="translate(210,50)">
+        <rect width="96" height="64" rx="3" fill="#0a4bb0"/>
+        <g fill="#ffd447">
+          ${Array.from({length:12},(_,i)=>{const a=-Math.PI/2+i*Math.PI/6;const cx=48+26*Math.cos(a);const cy=32+26*Math.sin(a);return star(cx,cy,5.4);}).join("")}
+        </g>
+      </g>
+
+      <!-- Braille dots top-left -->
+      <g fill="${n.ink}">
+        ${dots(150,60)}
+      </g>
+      <!-- Braille dots bottom-right -->
+      <g fill="${n.ink}">
+        ${dots(1090,520)}
+      </g>
+
+      <!-- signature -->
+      <path d="M212,150 c14,-22 20,10 30,-2 c8,-10 2,18 14,10 c10,-6 16,6 26,-4"
+            fill="none" stroke="#0a4bb0" stroke-width="3" stroke-linecap="round"/>
+
+      <!-- vertical ECB abbreviations -->
+      <text x="70" y="440" transform="rotate(-90 70 440)"
+            font-family="Georgia,serif" font-size="26" letter-spacing="4"
+            fill="${n.ink}" font-weight="700">BCE ECB ЕЦБ EZB EKT ESB EKB BĊE EBC</text>
+      <text x="118" y="150" transform="rotate(-90 118 150)"
+            font-family="Georgia,serif" font-size="15" fill="${n.ink}" opacity=".8">2017</text>
+
+      <!-- big denomination top-right -->
+      <text x="1150" y="150" text-anchor="end"
+            font-family="Arial,Helvetica,sans-serif" font-weight="800"
+            font-size="118" fill="#0a4bb0" letter-spacing="-4">${v}</text>
+
+      <!-- bottom-left denomination + EURO -->
+      <text x="150" y="540" font-family="Arial,Helvetica,sans-serif" font-weight="800"
+            font-size="150" fill="${n.accent}" letter-spacing="-6">${v}</text>
+      <g font-family="Arial,Helvetica,sans-serif" font-weight="800" fill="#ffffff"
+         stroke="${n.accent}" stroke-width="1.2" font-size="46" letter-spacing="3">
+        <text x="${150+ (''+v).length*82}" y="470">EURO</text>
+        <text x="${150+ (''+v).length*82}" y="512">EYPΩ</text>
+        <text x="${150+ (''+v).length*82}" y="554">EBPO</text>
+      </g>
+
+      <!-- 'The President' rotated -->
+      <text x="1130" y="300" transform="rotate(90 1130 300)"
+            font-family="Georgia,serif" font-style="italic" font-size="30"
+            fill="${n.ink}">The President</text>
+
+      <!-- subtle hologram stripe -->
+      <rect x="1090" y="0" width="46" height="600" fill="#ffffff" fill-opacity=".12"/>
+      <rect x="1090" y="0" width="46" height="600" fill="${n.c2}" fill-opacity=".10"/>
+
+      <!-- border -->
+      <rect x="1" y="1" width="1198" height="598" fill="none" stroke="${n.accent}" stroke-opacity=".35" stroke-width="2"/>
+    </g>
+  </svg>`;
+  return svg;
+}
+
+/* small helpers */
+function star(cx,cy,r){
+  let p="";
+  for(let i=0;i<5;i++){
+    const ao=-Math.PI/2+i*2*Math.PI/5;
+    const ai=ao+Math.PI/5;
+    p+=(i?"L":"M")+(cx+r*Math.cos(ao))+","+(cy+r*Math.sin(ao))+" ";
+    p+="L"+(cx+r*0.4*Math.cos(ai))+","+(cy+r*0.4*Math.sin(ai))+" ";
+  }
+  return `<path d="${p}Z"/>`;
+}
+function dots(x,y){
+  let s="";
+  const grid=[[0,0],[1,0],[0,1],[1,1],[0,2],[1,2]];
+  const chosen=[0,2,3,5];
+  chosen.forEach(i=>{const[dx,dy]=grid[i];s+=`<circle cx="${x+dx*16}" cy="${y+dy*16}" r="4.2"/>`;});
+  return s;
+}
+
+/* ---- Render ---- */
+const gallery=document.getElementById('gallery');
+const nav=document.getElementById('nav');
+NOTES.forEach(n=>{
+  const id="n"+n.value;
+  const block=document.createElement('div');
+  block.className='note-block';
+  block.id=id;
+  block.innerHTML=`
+    <div class="note-head">
+      <span class="swatch" style="background:${n.c2}"></span>
+      <span class="val">${n.value} €</span>
+      <span class="name">${n.name} · The President</span>
+    </div>
+    <div class="note-frame">${buildNote(n)}</div>`;
+  gallery.appendChild(block);
+
+  const a=document.createElement('a');
+  a.href="#"+id;a.textContent=n.value+" €";
+  nav.appendChild(a);
+});
+
+/* EU stars in hero */
+const sr=document.getElementById('starRow');
+sr.innerHTML=Array.from({length:12},()=>'★').join('');
+</script>
+</body>
+</html>
